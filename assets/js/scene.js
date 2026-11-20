@@ -6,10 +6,10 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from '/assets/js/vendor/RoomEnvironment.js';
 import { RoundedBoxGeometry } from '/assets/js/vendor/RoundedBoxGeometry.js';
-import { buildRoom } from '/assets/js/room.js';
+import { buildGate } from '/assets/js/gate.js';
 
-// 背景の世界：'sky'（雲の空）か 'room'（静かな部屋）
-// URL の末尾に ?world=room を付けると切り替えて見比べられる
+// 背景の世界：'sky'（雲の空）か 'gate'（雲の海に扉が並ぶ、境界の風景）
+// URL の末尾に ?world=gate を付けると切り替えて見比べられる
 const PARAMS = new URLSearchParams(location.search);
 const WORLD = PARAMS.get('world') || 'sky';
 // インスタントカメラ風の質感（ざらつき・にじみ・色かぶり）。?film=off で外せる
@@ -131,6 +131,7 @@ const SKY_FRAG = /* glsl */ `
 
 // ---- フィルムの仕上げ（画面全体にかける最後の一手） ----
 const FILM_FRAG = /* glsl */ `
+  // ふんわり明るい、チェキ風の仕上げ
   precision highp float;
   varying vec2 vUv;
   uniform sampler2D tScene;
@@ -142,54 +143,42 @@ const FILM_FRAG = /* glsl */ `
   void main() {
     vec2 uv = vUv;
     vec2 c = uv - 0.5;
-    float r2 = dot(c, c);
+    vec3 col = texture2D(tScene, uv).rgb;
 
-    // 1. 端ほど色がずれる（安いレンズっぽさ）
-    vec2 off = c * r2 * 0.018;
-    vec3 col;
-    col.r = texture2D(tScene, uv + off).r;
-    col.g = texture2D(tScene, uv).g;
-    col.b = texture2D(tScene, uv - off).b;
-
-    // 2. にじみ：明るいところの周りが赤橙ににじむ（ハレーション）＋全体を少しだけ甘く
-    vec3 glow = vec3(0.0), soft = vec3(0.0);
-    for (int i = 0; i < 12; i++) {
-      float a = float(i) * 0.5236;
-      vec2 d = vec2(cos(a), sin(a) * uRes.x / uRes.y);
-      vec3 s1 = texture2D(tScene, uv + d * 0.004).rgb;
-      vec3 s2 = texture2D(tScene, uv + d * 0.011).rgb;
-      soft += s1;
-      glow += max(s1 - 1.0, 0.0) + max(s2 - 1.0, 0.0) * 0.7;
+    // 1. ふんわり光る：明るいところから、白っぽい光がやわらかくあふれる
+    vec3 bloom = vec3(0.0);
+    for (int i = 0; i < 16; i++) {
+      float a = float(i) * 0.3927;
+      float r = (i < 8) ? 0.006 : 0.016;
+      vec2 d = vec2(cos(a), sin(a) * uRes.x / uRes.y) * r;
+      bloom += max(texture2D(tScene, uv + d).rgb - 0.7, 0.0);
     }
-    soft /= 12.0;
-    col = mix(col, soft, 0.22);
-    col += glow / 12.0 * vec3(1.0, 0.62, 0.42) * 0.55;
+    col += bloom / 16.0 * vec3(1.0, 0.96, 0.93) * 0.9;
 
-    // ここで普段どおりのトーンマップをかけてから、見た目の色（sRGB）で仕上げる
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
     col = pow(clamp(gl_FragColor.rgb, 0.0, 1.0), vec3(1.0 / 2.2));
 
-    // 3. 色：黒を浮かせて白を少し抑える（フィルムの淡さ）
-    col = mix(vec3(0.07, 0.075, 0.085), vec3(0.975, 0.965, 0.93), col);
+    // 2. 色：コントラストを少し下げて明るく。影はラベンダー、明るいところはクリーム
+    col = mix(vec3(0.13, 0.12, 0.17), vec3(1.0, 0.99, 0.965), col);
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
-    col += (1.0 - lum) * vec3(-0.012, 0.012, 0.022);   // 影は青緑寄り
-    col += lum * vec3(0.018, 0.008, -0.022);            // 明るいところは温かく
+    col = mix(vec3(lum), col, 1.06);                       // ほんの少しだけ色を濃く
 
-    // 4. 光漏れ：左上からうっすら（ゆっくり呼吸する）
-    float leak = smoothstep(0.85, 0.0, length((uv - vec2(-0.05, 1.05)) * vec2(1.0, 1.3)));
-    col += vec3(1.0, 0.62, 0.25) * leak * (0.07 + 0.03 * sin(uTime * 0.35));
+    // 3. 光漏れ：右上からピンクと黄色がうっすら（ゆっくり呼吸する）
+    float leakA = smoothstep(0.75, 0.0, length((uv - vec2(1.05, 1.02)) * vec2(1.0, 1.4)));
+    float leakB = smoothstep(0.55, 0.0, length((uv - vec2(0.92, 1.1)) * vec2(1.6, 1.0)));
+    float breathe = 0.85 + 0.15 * sin(uTime * 0.4);
+    col += vec3(1.0, 0.72, 0.80) * leakA * 0.10 * breathe;   // ピンク
+    col += vec3(1.0, 0.85, 0.30) * leakB * 0.07 * breathe;   // 黄色（#FFCC00 寄り）
 
-    // 5. 周辺減光
-    col *= 1.0 - smoothstep(0.3, 0.85, length(c * vec2(1.1, 1.0))) * 0.3;
+    // 4. 四隅をほんのり白く飛ばす（明るい写真の周辺）
+    col = mix(col, vec3(1.0, 0.985, 0.975), smoothstep(0.45, 0.95, length(c * vec2(1.15, 1.0))) * 0.22);
 
-    // 6. 粒子：毎フレーム変わる、中間調に強めのざらつき
-    vec2 px = floor(uv * uRes / 1.5);
-    float t = floor(uTime * 24.0);
+    // 5. 細かい粒子：控えめに
+    vec2 px = floor(uv * uRes);
+    float t = floor(uTime * 12.0);
     float g = hash(px + t * 17.13) - 0.5;
-    vec3 gc = vec3(hash(px + t * 3.1 + 1.7), hash(px + t * 5.3 + 4.2), hash(px + t * 7.7 + 9.1)) - 0.5;
-    float amt = 0.11 * (1.0 - abs(lum - 0.5) * 0.9);
-    col += g * amt + gc * amt * 0.35;
+    col += g * 0.035;
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -202,7 +191,7 @@ function init() {
   } catch (e) {
     return; // WebGL なし
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));   // 高精細な画面ではキャラもくっきり
   renderer.toneMapping = THREE.NeutralToneMapping;   // 色がくすまないトーンマップ
   renderer.toneMappingExposure = 1.0;
 
@@ -230,11 +219,11 @@ function init() {
   );
   sky.frustumCulled = false;
   sky.renderOrder = -1;
-  let room = null;
-  if (WORLD === 'room') room = buildRoom(scene, renderer);
-  else scene.add(sky);
+  scene.add(sky);
+  let room = null;   // 追加の世界（扉の風景など）
+  if (WORLD === 'gate') room = buildGate(scene);
 
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 300);
   camera.position.set(0, 0, 10);
 
   // フィルム仕上げ用：一度テクスチャに描いてから、全画面の板で仕上げる
@@ -313,8 +302,8 @@ function init() {
   const loader = new THREE.TextureLoader();
   const pending = [];
   document.querySelectorAll('[data-gl="figure"]').forEach((img) => {
-    // transparent にするとガラスの透過に写らないので alphaTest で抜く
-    const mat = new THREE.MeshBasicMaterial({ alphaTest: 0.5, toneMapped: false, fog: false });
+    // transparent にするとガラスの透過に写らないので、alphaToCoverage で縁をなめらかに抜く
+    const mat = new THREE.MeshBasicMaterial({ alphaToCoverage: true, toneMapped: false, fog: false });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
     mesh.visible = false;
     scene.add(mesh);
@@ -322,7 +311,9 @@ function init() {
     pending.push(new Promise((resolve) => {
       loader.load(img.currentSrc || img.src, (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
-        tex.anisotropy = 4;
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        tex.generateMipmaps = true;
         mat.map = tex;
         mat.needsUpdate = true;
         mesh.visible = true;

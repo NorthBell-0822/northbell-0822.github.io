@@ -348,27 +348,12 @@ body::after {
   }
 }
 
-/* ---------- 静かな部屋（?world=room） ---------- */
-/* フィルムのような粒子と、四隅をほんのり落とす */
-html[data-world="room"] body::after { opacity: .1; }
-html[data-world="room"] body::before {
-  content: "";
-  position: fixed; inset: 0;
-  z-index: 49;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(20, 40, 36, .22) 100%);
-}
-/* 足元は水面なので、フッターの文字を白に */
-html[data-world="room"] .foot,
-html[data-world="room"] .foot .note,
-html[data-world="room"] .foot .copy { color: rgba(255, 255, 255, .92); }
-
 /* ---------- インスタントカメラ風の粒子（文字やパネルの上にも） ---------- */
 /* 3D 側でも粒子をかけているので、ここは控えめに全体をなじませる役 */
 html:not([data-film="off"]) body::after {
   inset: -50%;
-  opacity: .09;
-  animation: grain .5s steps(4) infinite;
+  opacity: .035;
+  animation: grain .8s steps(4) infinite;
 }
 @keyframes grain {
   0%   { transform: translate(0, 0); }
