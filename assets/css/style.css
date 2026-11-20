@@ -217,7 +217,12 @@ body::after {
   backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid var(--glass-edge);
   border-bottom-color: rgba(255, 255, 255, .35);
-  box-shadow: 0 13px 55px rgba(60, 64, 80, .06), inset 0 1px 0 rgba(255, 255, 255, .7);
+  box-shadow:
+    0 13px 55px rgba(60, 64, 80, .06),
+    inset 0 1px 0 rgba(255, 255, 255, .8),          /* 上の縁のハイライト */
+    inset 0 0 0 1px rgba(255, 255, 255, .25),       /* ガラスの厚み */
+    inset 0 0 22px rgba(255, 255, 255, .28),        /* 縁がぼんやり明るい（ガラスブロック風） */
+    inset 0 -3px 10px rgba(40, 90, 80, .06);        /* 下の縁はほんのり青緑 */
   border-radius: var(--sp-3);
 }
 

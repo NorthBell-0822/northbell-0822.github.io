@@ -253,30 +253,51 @@ function init() {
   postScene.add(postQuad);
 
   // ---- すりガラス＋パールの質感 ----
+  // ---- ガラスブロックの質感 ----
+  // 厚みのある透明ガラス。表面がゆらゆら波打っていて、向こう側が歪んで見える。
+  // 縁はほんのり青緑、中には小さな気泡
+  const ripple = glassBlockNormalTexture();
   const glass = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     transmission: 1,          // 透過
-    roughness: 0.17,          // すりガラスのぼけ具合（0 で透明ガラス）
-    thickness: 0.8,
-    ior: 1.45,
-    iridescence: 0.5,         // パールの虹色
+    roughness: 0.04,          // ほぼ透明（ぼかしではなく、波打ちで歪ませる）
+    thickness: 1.0,           // 厚いほど屈折が強くなる
+    ior: 1.5,
+    normalMap: ripple,        // 表面の波打ち
+    normalScale: new THREE.Vector2(0.32, 0.32),
+    attenuationColor: new THREE.Color('#e4f4ee'),   // 厚いところほど、ほんのり青緑に
+    attenuationDistance: 7,
+    iridescence: 0.15,        // パールの虹色はほんの少し
     iridescenceIOR: 1.35,
     iridescenceThicknessRange: [120, 420],
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.15,
+    clearcoat: 1,
+    clearcoatRoughness: 0.05,
     specularIntensity: 1,
-    envMapIntensity: 0.3,     // 写り込みを控えめにして、向こう側を見せる
+    envMapIntensity: 0.42,
   });
 
   // 三角すい用：色のない、すっきり透明なガラス
   const clearGlass = glass.clone();
-  clearGlass.roughness = 0.04;
+  clearGlass.roughness = 0.03;
+  clearGlass.normalScale = new THREE.Vector2(0.5, 0.5);
   clearGlass.thickness = 0.6;
   clearGlass.iridescence = 0.5;
   clearGlass.envMapIntensity = 0.7;   // 透明でも輪郭が見えるよう、写り込みは少し強め
 
-  const cube = new THREE.Mesh(new RoundedBoxGeometry(1, 1, 1, 6, 0.06), glass);
+  const cube = new THREE.Mesh(new RoundedBoxGeometry(1, 1, 0.82, 6, 0.07), glass);
   cube.rotation.set(0.5, 0.6, 0.1);
+
+  // 気泡：ガラスの中に小さな粒を散らす
+  const bubbleMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: 1, roughness: 0.05, envMapIntensity: 1.6 });
+  const bubbleGeo = new THREE.SphereGeometry(1, 10, 8);
+  let seed = 3;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 46; i++) {
+    const b = new THREE.Mesh(bubbleGeo, bubbleMat);
+    b.position.set((rnd() - 0.5) * 0.8, (rnd() - 0.5) * 0.8, (rnd() - 0.5) * 0.62);
+    b.scale.setScalar(0.004 + rnd() * rnd() * 0.016);
+    cube.add(b);
+  }
 
   // 三角すい（底面が三角形の錐）。先端を右に向けて「再生ボタン ▶」に見立てる
   const pyramidMesh = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1, 3, 1), clearGlass);
@@ -411,3 +432,35 @@ function init() {
 }
 
 if (canvas) init();
+
+// ガラスブロックの表面の「ゆらぎ」。継ぎ目なくつながる法線マップをコードで作る
+function glassBlockNormalTexture() {
+  const N = 256;
+  let seed = 11;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // 大きなうねり＋細かいでこぼこ（ハンマーで叩いたような面）
+  const waves = [];
+  for (let i = 0; i < 10; i++) waves.push({ kx: Math.round(rnd() * 4 - 2) || 1, ky: Math.round(rnd() * 4 - 2) || 1, ph: rnd() * 6.28, a: 1.6 });
+  for (let i = 0; i < 18; i++) waves.push({ kx: Math.round(rnd() * 16 - 8) || 3, ky: Math.round(rnd() * 16 - 8) || 3, ph: rnd() * 6.28, a: 0.12 });
+  const data = new Uint8Array(N * N * 4);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    let dx = 0, dy = 0;
+    for (const w of waves) {
+      const arg = (2 * Math.PI * (w.kx * x + w.ky * y)) / N + w.ph;
+      const c = Math.cos(arg) * w.a;
+      dx += c * w.kx;
+      dy += c * w.ky;
+    }
+    const nx = -dx * 0.045, ny = -dy * 0.045;
+    const l = Math.hypot(nx, ny, 1);
+    const i = (y * N + x) * 4;
+    data[i] = (nx / l * 0.5 + 0.5) * 255;
+    data[i + 1] = (ny / l * 0.5 + 0.5) * 255;
+    data[i + 2] = (1 / l * 0.5 + 0.5) * 255;
+    data[i + 3] = 255;
+  }
+  const t = new THREE.DataTexture(data, N, N);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.needsUpdate = true;
+  return t;
+}
