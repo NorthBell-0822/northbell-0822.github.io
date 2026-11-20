@@ -33,6 +33,8 @@ assets/3d/             Blender 素材の置き場（将来 .glb を読み込む�
 - 雲の空（標準）：`/`
 - アーチの水辺（白いアーチが鏡のような水面に並ぶ）：URL の末尾に `?world=arch`
   - 中身は `assets/js/arches.js`。標準にしたい時は `scene.js` の `WORLD` の初期値を `'arch'` に
+- スタジオ（床と壁がなめらかにつながる空間に、誰も座っていないスツール）：URL の末尾に `?world=studio`
+  - 中身は `assets/js/studio.js`
 
 ## チェキ風の仕上げ
 

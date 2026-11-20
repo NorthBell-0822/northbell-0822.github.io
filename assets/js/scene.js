@@ -7,9 +7,10 @@ import * as THREE from 'three';
 import { RoomEnvironment } from '/assets/js/vendor/RoomEnvironment.js';
 import { RoundedBoxGeometry } from '/assets/js/vendor/RoundedBoxGeometry.js';
 import { buildArches } from '/assets/js/arches.js';
+import { buildStudio } from '/assets/js/studio.js';
 
-// 背景の世界：'sky'（雲の空）か 'arch'（白いアーチが水辺に並ぶ風景）
-// URL の末尾に ?world=arch を付けると切り替えて見比べられる
+// 背景の世界：'sky'（雲の空）、'arch'（白いアーチの水辺）、'studio'（スツールのあるスタジオ）
+// URL の末尾に ?world=arch などを付けると切り替えて見比べられる
 const PARAMS = new URLSearchParams(location.search);
 const WORLD = PARAMS.get('world') || 'sky';
 // インスタントカメラ風の質感（ざらつき・にじみ・色かぶり）。?film=off で外せる
@@ -223,6 +224,7 @@ function init() {
   sky.renderOrder = -1;
   let room = null;   // 追加の世界（アーチの水辺など）
   if (WORLD === 'arch') room = buildArches(scene);
+  if (WORLD === 'studio') room = buildStudio(scene, renderer);
   if (!room?.hidesSky) scene.add(sky);
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 300);
@@ -318,6 +320,11 @@ function init() {
         tex.generateMipmaps = true;
         mat.map = tex;
         mat.needsUpdate = true;
+        if (room?.wantsShadows) {
+          // キャラの形どおりの影を床に落とす
+          mesh.castShadow = true;
+          mesh.customDepthMaterial = new THREE.MeshDepthMaterial({ map: tex, alphaTest: 0.5 });
+        }
         mesh.visible = true;
         resolve();
       }, undefined, resolve);
@@ -374,6 +381,7 @@ function init() {
       f.mesh.position.set(x, y, 0);
       f.mesh.scale.set(w * unit, h * unit, 1);
     }
+    room?.setAnchor?.(figures[0]?.mesh.position.x, tall);
   }
   addEventListener('resize', layout);
 
