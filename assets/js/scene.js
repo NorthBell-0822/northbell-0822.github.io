@@ -30,6 +30,86 @@ const LAYOUTS = {
 };
 const layoutKey = document.body.dataset.scene || 'sub';
 
+// ---- 空のシェーダー ----
+// 冷たく澄んだ空気、白い雲、雲の向こうから透ける夕日（#FFCC00）
+const SKY_VERT = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = vec4(position.xy, 0.9999, 1.0);   // カメラに関係なく画面いっぱい・一番奥
+  }
+`;
+const SKY_FRAG = /* glsl */ `
+  precision highp float;
+  varying vec2 vUv;
+  uniform float uTime;
+  uniform float uAspect;
+  uniform float uFade;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x),
+               mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+  }
+  float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    mat2 r = mat2(0.8, -0.6, 0.6, 0.8);
+    for (int i = 0; i < 6; i++) { v += a * noise(p); p = r * p * 2.03 + 3.1; a *= 0.5; }
+    return v;
+  }
+  // 雲の濃さ（ゆがませて、ちぎれた雲らしく）
+  float cloud(vec2 p) {
+    vec2 q = vec2(fbm(p + vec2(0.0, uTime * 0.012)), fbm(p + vec2(5.2, 1.3)));
+    float n = fbm(p + 1.6 * q);
+    return smoothstep(0.40, 0.70, n);
+  }
+
+  void main() {
+    vec2 uv = vUv;
+    vec2 p = vec2(uv.x * uAspect, uv.y) * 1.7;
+    p.x += uTime * 0.008;                   // ゆっくり流れる
+    p += vec2(-0.35, 0.25) * uv.y;          // 写真のような斜めの流れ
+
+    // 太陽は画面の右下の外
+    vec2 sunPos = vec2(0.80 * uAspect, -0.08);
+    vec2 sp = vec2(uv.x * uAspect, uv.y);
+    float sunD = length(sp - sunPos);
+    vec2 toSun = normalize(sunPos - sp);
+
+    // 空：上は冷たい青、下は白っぽく
+    vec3 skyTop = vec3(0.70, 0.78, 0.89);
+    vec3 skyLow = vec3(0.90, 0.92, 0.94);
+    vec3 col = mix(skyLow, skyTop, smoothstep(0.0, 1.0, uv.y));
+
+    float d  = cloud(p);
+    float d2 = cloud(p + toSun * 0.06);      // 太陽側に少しずらして、光の当たり方を出す
+    float lit = clamp(0.6 + (d - d2) * 3.0, 0.0, 1.0);
+    lit *= 1.0 - smoothstep(0.75, 1.0, d) * 0.35;   // 厚いところは少し暗く（もこもこ感）
+
+    vec3 shadow = vec3(0.64, 0.67, 0.74);    // 雲の影：冷たいグレー
+    vec3 white  = vec3(1.0, 1.0, 0.995);
+    vec3 cloudCol = mix(shadow, white, lit);
+
+    // 夕日：太陽に近いほど、雲の縁が黄色く透ける
+    vec3 sunCol = vec3(1.0, 0.80, 0.0);      // #FFCC00
+    float glow = exp(-sunD * 2.6);
+    float rim = smoothstep(0.15, 0.6, d) * (1.0 - smoothstep(0.6, 1.0, d));   // 薄いところほど透ける
+    cloudCol += sunCol * glow * (0.35 + rim * 0.9);
+
+    col = mix(col, cloudCol, d * 0.92);
+    col += sunCol * exp(-sunD * 4.0) * 0.45;          // 太陽まわりの光
+    col = mix(col, vec3(1.0), exp(-sunD * 9.0) * 0.6); // 中心は白く飛ばす
+
+    // 文字が読めるように、全体を白っぽく淡くする
+    col = mix(col, vec3(0.93, 0.94, 0.95), uFade);
+    // ここまでの色は見た目（sRGB）で決めているので、リニアに直してから three.js に渡す
+    gl_FragColor = vec4(pow(col, vec3(2.2)), 1.0);
+    #include <colorspace_fragment>
+  }
+`;
+
 function init() {
   let renderer;
   try {
@@ -37,13 +117,31 @@ function init() {
   } catch (e) {
     return; // WebGL なし
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.95;
 
-  const BG = new THREE.Color('#e7e7e7');
   const scene = new THREE.Scene();
-  scene.background = BG;
+  scene.background = new THREE.Color('#e7e7e7');
+
+  // ---- 背景の空と雲（写真は使わず、ノイズで描いている） ----
+  const sky = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 2),
+    new THREE.ShaderMaterial({
+      uniforms: {
+        uTime:   { value: 0 },
+        uAspect: { value: 1 },
+        uFade:   { value: Number(document.body.dataset.skyFade ?? 0.25) },
+      },
+      vertexShader: SKY_VERT,
+      fragmentShader: SKY_FRAG,
+      depthWrite: false,
+      depthTest: false,
+    })
+  );
+  sky.frustumCulled = false;
+  sky.renderOrder = -1;
+  scene.add(sky);
 
   // 写り込み用のスタジオ照明
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -125,6 +223,7 @@ function init() {
   function layout() {
     W = innerWidth; H = innerHeight;
     renderer.setSize(W, H, false);
+    sky.material.uniforms.uAspect.value = W / H;
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
     // z=0 の面で 1px が何ユニットか
@@ -169,6 +268,7 @@ function init() {
     pointer.y += (pointer.ty - pointer.y) * 0.04;
 
     const m = reduceMotion ? 0 : 1;
+    sky.material.uniforms.uTime.value = 20 + t * m;
     cube.rotation.x = 0.5 + t * 0.09 * m + pointer.y * 0.3;
     cube.rotation.y = 0.6 + t * 0.12 * m + pointer.x * 0.3;
     pyramidMesh.rotation.y = 0.5 + t * 0.35 * m;              // 先端の軸まわりにくるくる

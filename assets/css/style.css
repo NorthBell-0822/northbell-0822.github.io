@@ -50,7 +50,8 @@
 html, body { height: 100%; }
 
 body {
-  background: var(--bg);
+  /* WebGL が使えない時の空（ふだんは3Dの雲が上に描かれる） */
+  background: var(--bg) linear-gradient(to bottom, #d3dbe6, #edf0f3 70%, #fbf3d9) fixed;
   color: var(--ink);
   font-family: var(--ja);
   font-size: var(--fs-1);
