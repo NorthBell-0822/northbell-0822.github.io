@@ -36,8 +36,6 @@
 
   --edge: clamp(16px, 2.8vw, 40px);   /* 画面の外周の余白 */
 
-  --glass:      rgba(255, 255, 255, .18);
-  --glass-edge: rgba(255, 255, 255, .7);
   --pearl: conic-gradient(from 210deg, #f4ecf1, #e5edf6, #edf5ee, #f5f0e4, #f4ecf1);
 
   /* 細めのゴシック体で統一 */
@@ -211,18 +209,10 @@ body::after {
   color: var(--sub);
 }
 
+/* 文字の入る枠：黒い細線＋角丸（ガラス風はやめた） */
 .glass {
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-  backdrop-filter: blur(10px) saturate(150%);
-  border: 1px solid var(--glass-edge);
-  border-bottom-color: rgba(255, 255, 255, .35);
-  box-shadow:
-    0 13px 55px rgba(60, 64, 80, .06),
-    inset 0 1px 0 rgba(255, 255, 255, .8),          /* 上の縁のハイライト */
-    inset 0 0 0 1px rgba(255, 255, 255, .25),       /* ガラスの厚み */
-    inset 0 0 22px rgba(255, 255, 255, .28),        /* 縁がぼんやり明るい（ガラスブロック風） */
-    inset 0 -3px 10px rgba(40, 90, 80, .06);        /* 下の縁はほんのり青緑 */
+  background: transparent;
+  border: 1px solid var(--ink);
   border-radius: var(--sp-3);
 }
 
@@ -274,9 +264,7 @@ body::after {
 .work .thumb::after {
   content: "";
   position: absolute; inset: 0;
-  background: var(--play) no-repeat 54% 50% / 21px 21px, rgba(255, 255, 255, .35);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: var(--play) no-repeat 54% 50% / 21px 21px, rgba(255, 255, 255, .55);
   opacity: 0;
   transition: opacity .3s;
 }
