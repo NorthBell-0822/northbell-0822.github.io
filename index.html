@@ -7,35 +7,48 @@
   <meta name="description" content="バーチャルシンガー 少女唄日（しょうじょうか／NorthBell）の公式サイト">
   <meta property="og:title" content="NorthBell 少女唄日">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="assets/img/ogp.jpg">
+  <meta property="og:image" content="/assets/img/ogp.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Zen+Kaku+Gothic+New:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@400&family=Zen+Kaku+Gothic+New:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <script type="importmap">{ "imports": { "three": "/assets/js/vendor/three.module.min.js" } }</script>
+  <script type="module" src="/assets/js/scene.js"></script>
 </head>
-<body>
+<body data-scene="top">
 
-  <nav class="tabbar glass" aria-label="メニュー">
-    <a class="logo" href="./">NorthBell</a>
-      <a class="tab" href="./" aria-current="page">Top</a>
-      <a class="tab" href="profile/">Profile</a>
-      <a class="tab" href="works/">Works</a>
-      <a class="tab" href="news/">News</a>
-      <a class="tab" href="contact/">Contact</a>
-  </nav>
+  <canvas id="gl" aria-hidden="true"></canvas>
 
-  <main>
-    <section class="hero">
-      <div>
-        <!-- 3D素材ができたら、この .pearl を <img src="assets/3d/○○.webp" alt=""> に差し替え -->
-        <div class="pearl" aria-hidden="true"></div>
-        <h1 class="hero-name">NorthBell</h1>
-        <p class="hero-ja">少女唄日</p>
-      </div>
-    </section>
-  </main>
+  <div class="frame">
+    <header class="head">
+      <a class="logo" href="/">NorthBell<small>少女唄日</small></a>
+      <nav class="tabs" aria-label="メニュー">
+        <a href="/" aria-current="page">Top</a>
+        <a href="/profile/">Profile</a>
+        <a href="/works/">Works</a>
+        <a href="/news/">News</a>
+        <a href="/contact/">Contact</a>
+      </nav>
+      <span class="count">01 / 05</span>
+    </header>
 
-  <footer>&copy; NorthBell</footer>
+    <div class="stage">
+      <img class="figure" src="/assets/img/northbell.webp" alt="少女唄日" data-gl="figure" width="1800" height="1209">
+    </div>
+    <div class="content">
+      <h1 class="hero-name">North<br>Bell</h1>
+      <p class="hero-ja">少女唄日<small>しょうじょうか</small></p>
+      <p class="hero-lead">Virtual Singer<br>Profile &amp; Portfolio</p>
+    </div>
+
+    <footer class="foot">
+      <span>Current<br>(Top)</span>
+      <span class="note">Virtual Singer — 少女唄日</span>
+      <span class="copy">&copy; 2026 NorthBell</span>
+    </footer>
+  </div>
+
+  <p class="side-note">Reproduction or modification of the content of this site is prohibited.</p>
 
 </body>
 </html>
