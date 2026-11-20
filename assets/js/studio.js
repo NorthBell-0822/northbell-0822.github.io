@@ -101,7 +101,7 @@ export function buildStudio(scene, renderer) {
     hidesSky: true,
     wantsShadows: true,
     setTall(tall) {
-      group.position.y = tall ? -0.6 : 0;
+      group.position.y = tall ? 1.8 : 0;   // スマホでは床を上げて、スツールをキャラのそばに（文字に重ならない）
     },
     // キャラの真下にスツールを置く（キャラがいないページは右寄りの黄金比の位置）
     setAnchor(x, tall) {
