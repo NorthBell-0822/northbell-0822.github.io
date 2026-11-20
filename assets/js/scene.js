@@ -32,16 +32,16 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // s    : 画面の短い辺に対する大きさ
 const LAYOUTS = {
   top: {
-    wide: { cube: { x: .382, y: .618, s: .30 }, pyramid: { x: .17, y: .32, s: .30 / PHI } },
-    tall: { cube: { x: .50, y: .36, s: .30 }, pyramid: { x: .80, y: .17, s: .30 / PHI } },
+    wide: { cube: { x: .36, y: .60, s: .46 }, pyramid: { x: .15, y: .28, s: .46 / PHI } },
+    tall: { cube: { x: .52, y: .36, s: .46 }, pyramid: { x: .80, y: .15, s: .46 / PHI } },
   },
   sub: {
-    wide: { cube: { x: .809, y: .618, s: .30 }, pyramid: { x: .70, y: .30, s: .30 / PHI } },
-    tall: { cube: { x: .76, y: .70, s: .30 }, pyramid: { x: .26, y: .80, s: .30 / PHI } },
+    wide: { cube: { x: .80, y: .60, s: .46 }, pyramid: { x: .66, y: .26, s: .46 / PHI } },
+    tall: { cube: { x: .74, y: .72, s: .44 }, pyramid: { x: .24, y: .82, s: .44 / PHI } },
   },
   profile: {
-    wide: { cube: { x: .72, y: .80, s: .22 }, pyramid: { x: .86, y: .22, s: .26 / PHI } },
-    tall: { cube: { x: .66, y: .74, s: .30 }, pyramid: { x: .86, y: .14, s: .28 / PHI } },
+    wide: { cube: { x: .70, y: .78, s: .34 }, pyramid: { x: .88, y: .20, s: .34 / PHI } },
+    tall: { cube: { x: .66, y: .76, s: .42 }, pyramid: { x: .84, y: .14, s: .42 / PHI } },
   },
 };
 const layoutKey = document.body.dataset.scene || 'sub';
