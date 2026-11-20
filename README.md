@@ -1,16 +1,27 @@
-# 少女唄日 ホームページ
+# NorthBell / 少女唄日（しょうじょうか）公式サイト
 
-HTML / CSS のみの静的サイト。ビルド不要。`index.html` をブラウザで開けば確認できる。
+バーチャルシンガー「少女唄日」のプロフィール・ポートフォリオサイト。
+HTML / CSS のみの静的サイト（ビルド不要）。GitHub Pages で公開する想定。
 
-## 構成
+## 構成（タブ＝ページ）
 
 ```
-index.html      ページ本体（文章はここを書き換える）
-css/style.css   見た目（色は先頭の :root で変更）
-images/         写真・ジャケット（top.jpg, profile.jpg, ogp.jpg など）
+index.html            Top
+profile/index.html    Profile
+works/index.html      Works（ポートフォリオ）
+news/index.html       News
+contact/index.html    Contact
+assets/css/style.css  見た目（色・ガラスの強さは先頭の :root で調整）
+assets/img/           立ち絵・サムネ・OGP画像（ogp.jpg 1200x630）
+assets/3d/            Blender で書き出した3D素材（透過 webp / png）
 ```
 
 ## 更新のしかた
 
-- お知らせ：`index.html` の `<ul class="news">` に `<li>` を上に追加
-- ライブ：`<table class="live">` に `<tr>` を追加
+- 作品を追加：`works/index.html` の `<a class="work glass">…</a>` をコピー
+- お知らせを追加：`news/index.html` の `<li>` を一番上に追加
+- タブを増やす：全ページの `<nav class="tabbar">` に同じ行を追加
+
+## 公開（GitHub Pages）
+
+Settings → Pages → Branch を `main` / `/ (root)` にして保存。
