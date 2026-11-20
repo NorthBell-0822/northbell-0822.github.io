@@ -68,11 +68,23 @@ function init() {
     envMapIntensity: 0.55,
   });
 
+  // 三角すい用：イメージカラー #FFCC00 がほんのり透ける黄色いガラス
+  const yellowGlass = glass.clone();
+  yellowGlass.color = new THREE.Color('#ffdf6b');
+  yellowGlass.attenuationColor = new THREE.Color('#FFCC00');
+  yellowGlass.attenuationDistance = 3;
+  yellowGlass.emissive = new THREE.Color('#FFCC00');
+  yellowGlass.emissiveIntensity = 0.18;   // くすまないように少しだけ自ら光らせる
+  yellowGlass.iridescence = 0.25;
+
   const cube = new THREE.Mesh(new RoundedBoxGeometry(1, 1, 1, 6, 0.06), glass);
-  // 三角すい（底面が三角形の錐）
-  const pyramid = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1, 3, 1), glass);
   cube.rotation.set(0.5, 0.6, 0.1);
-  pyramid.rotation.set(0.45, 0.4, -0.25);
+
+  // 三角すい（底面が三角形の錐）。先端を右に向けて「再生ボタン ▶」に見立てる
+  const pyramidMesh = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1, 3, 1), yellowGlass);
+  const pyramid = new THREE.Group();
+  pyramid.add(pyramidMesh);
+  pyramid.rotation.z = -Math.PI / 2;
   cube.position.z = 1.6;
   pyramid.position.z = 2.2;
   scene.add(cube, pyramid);
@@ -159,9 +171,10 @@ function init() {
     const m = reduceMotion ? 0 : 1;
     cube.rotation.x = 0.5 + t * 0.09 * m + pointer.y * 0.3;
     cube.rotation.y = 0.6 + t * 0.12 * m + pointer.x * 0.3;
-    pyramid.rotation.x = 0.45 + pointer.y * 0.3;
-    pyramid.rotation.y = 0.4 - t * 0.15 * m + pointer.x * 0.4;
-    pyramid.rotation.z = -0.25 + Math.sin(t * 0.4) * 0.08 * m;
+    pyramidMesh.rotation.y = 0.5 + t * 0.35 * m;              // 先端の軸まわりにくるくる
+    pyramid.rotation.x = pointer.y * 0.4;
+    pyramid.rotation.y = pointer.x * 0.4;
+    pyramid.rotation.z = -Math.PI / 2 + Math.sin(t * 0.4) * 0.08 * m;
 
     cube.position.x = base.cube.x - pointer.x * 0.25;
     cube.position.y = base.cube.y + Math.sin(t * 0.6) * 0.06 * m + pointer.y * 0.2;

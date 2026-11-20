@@ -12,6 +12,12 @@
   --sub:     #8b8d93;
   --line:    rgba(31, 32, 36, .14);
 
+  /* イメージカラー */
+  --white:   #FFFFFF;
+  --accent:  #FFCC00;
+  /* 再生ボタン ▶ のモチーフ（黄色の三角） */
+  --play: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 0L9.66 5L1 10Z' fill='%23FFCC00'/%3E%3C/svg%3E");
+
   --phi-a:   61.8fr;   /* 大 */
   --phi-b:   38.2fr;   /* 小 */
 
@@ -30,7 +36,7 @@
 
   --edge: clamp(16px, 2.8vw, 40px);   /* 画面の外周の余白 */
 
-  --glass:      rgba(255, 255, 255, .34);
+  --glass:      rgba(255, 255, 255, .46);
   --glass-edge: rgba(255, 255, 255, .8);
   --pearl: conic-gradient(from 210deg, #f4ecf1, #e5edf6, #edf5ee, #f5f0e4, #f4ecf1);
 
@@ -55,6 +61,7 @@ body {
 }
 
 a { color: inherit; text-decoration: none; }
+::selection { background: var(--accent); color: var(--ink); }
 img { display: block; max-width: 100%; }
 ul { list-style: none; }
 
@@ -114,7 +121,12 @@ body::after {
 .tabs a::before { content: "("; }
 .tabs a::after  { content: ")"; }
 .tabs a:hover { color: var(--sub); }
-.tabs a[aria-current="page"] { color: var(--sub); }
+.tabs a[aria-current="page"] {
+  /* 今いるタブの上に小さな ▶ */
+  background: var(--play) no-repeat 50% 0 / 7px 7px;
+  padding-top: 13px;
+  margin-top: -13px;
+}
 
 .count { justify-self: end; font-variant-numeric: tabular-nums; }
 
@@ -170,6 +182,8 @@ body::after {
   margin-top: var(--sp-5);
   padding-top: var(--sp-3);
   border-top: 1px solid var(--line);
+  padding-left: var(--sp-3);
+  background: var(--play) no-repeat 0 calc(var(--sp-3) + 4px) / 8px 8px;
   font-family: var(--sans);
   font-size: var(--fs-0);
   letter-spacing: .14em;
@@ -243,9 +257,21 @@ body::after {
   padding: var(--sp-2);
   transition: background .3s;
 }
-.work:hover { background: rgba(255, 255, 255, .35); }
+.work:hover { background: rgba(255, 255, 255, .5); }
 .work .no { font-family: var(--serif); font-size: var(--fs-2); line-height: 1; }
-.work .thumb { aspect-ratio: 1.618 / 1; margin: var(--sp-2) 0; background: var(--pearl); border-radius: 4px; object-fit: cover; width: 100%; }
+.work .thumb { position: relative; aspect-ratio: 1.618 / 1; margin: var(--sp-2) 0; background: var(--pearl); border-radius: 4px; overflow: hidden; }
+.work .thumb img { width: 100%; height: 100%; object-fit: cover; }
+/* マウスを乗せると再生ボタンが出る */
+.work .thumb::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--play) no-repeat 54% 50% / 21px 21px, rgba(255, 255, 255, .35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.work:hover .thumb::after { opacity: 1; }
 .work p { font-size: var(--fs-1); line-height: 1.5; }
 .work small { display: block; font-family: var(--sans); font-size: var(--fs-0); color: var(--sub); letter-spacing: .08em; }
 
