@@ -40,9 +40,10 @@
   --glass-edge: rgba(255, 255, 255, .7);
   --pearl: conic-gradient(from 210deg, #f4ecf1, #e5edf6, #edf5ee, #f5f0e4, #f4ecf1);
 
-  --serif: "Cormorant Garamond", serif;
-  --sans:  "Jost", "Zen Kaku Gothic New", sans-serif;
-  --ja:    "Zen Kaku Gothic New", sans-serif;
+  /* 細めのゴシック体で統一 */
+  --display: "Jost", "Noto Sans JP", sans-serif;   /* 大きな見出し（weight 200） */
+  --sans:    "Jost", "Noto Sans JP", sans-serif;   /* 英字の小さなラベル */
+  --ja:      "Noto Sans JP", sans-serif;           /* 本文 */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,6 +55,7 @@ body {
   background: var(--bg) linear-gradient(to bottom, #d3dbe6, #edf0f3 70%, #fbf3d9) fixed;
   color: var(--ink);
   font-family: var(--ja);
+  font-weight: 300;
   font-size: var(--fs-1);
   line-height: 1.8;
   letter-spacing: .04em;
@@ -114,7 +116,7 @@ body::after {
   font-size: var(--fs-1);
   letter-spacing: .08em;
 }
-.logo { font-family: var(--serif); font-size: var(--fs-2); font-weight: 500; letter-spacing: .06em; }
+.logo { font-family: var(--display); font-size: var(--fs-2); font-weight: 300; letter-spacing: .08em; }
 .logo small { font-family: var(--ja); font-size: var(--fs-0); color: var(--sub); margin-left: var(--sp-2); letter-spacing: .3em; }
 
 .tabs { display: flex; gap: var(--sp-4); text-transform: uppercase; }
@@ -167,11 +169,11 @@ body::after {
 
 /* ---------- Top ---------- */
 .hero-name {
-  font-family: var(--serif);
-  font-weight: 300;
+  font-family: var(--display);
+  font-weight: 200;
   font-size: clamp(var(--fs-4), 6.2vw, var(--fs-5));
-  line-height: 1;
-  letter-spacing: .02em;
+  line-height: 1.05;
+  letter-spacing: .04em;
 }
 .hero-ja {
   margin-top: var(--sp-3);
@@ -194,10 +196,11 @@ body::after {
 
 /* ---------- 下層ページ共通 ---------- */
 .page-title {
-  font-family: var(--serif);
-  font-weight: 300;
+  font-family: var(--display);
+  font-weight: 200;
   font-size: clamp(var(--fs-4), 6.2vw, var(--fs-5));
-  line-height: 1;
+  line-height: 1.05;
+  letter-spacing: .03em;
 }
 .page-title small {
   display: block;
@@ -238,8 +241,8 @@ body::after {
 .rows .k { font-family: var(--sans); color: var(--sub); font-variant-numeric: tabular-nums; letter-spacing: .08em; }
 
 /* Profile */
-.profile-name { font-size: var(--fs-2); font-weight: 500; letter-spacing: .12em; }
-.profile-name small { font-size: var(--fs-0); color: var(--sub); margin-left: var(--sp-2); letter-spacing: .2em; font-weight: 400; }
+.profile-name { font-size: var(--fs-2); font-weight: 300; letter-spacing: .12em; }
+.profile-name small { font-size: var(--fs-0); color: var(--sub); margin-left: var(--sp-2); letter-spacing: .2em; font-weight: 300; }
 .profile-text { margin-top: var(--sp-3); }
 .profile .rows { margin-top: var(--sp-3); }
 
@@ -259,7 +262,7 @@ body::after {
   transition: background .3s;
 }
 .work:hover { background: rgba(255, 255, 255, .5); }
-.work .no { font-family: var(--serif); font-size: var(--fs-2); line-height: 1; }
+.work .no { font-family: var(--display); font-weight: 200; font-size: var(--fs-2); line-height: 1; }
 .work .thumb { position: relative; aspect-ratio: 1.618 / 1; margin: var(--sp-2) 0; background: var(--pearl); border-radius: 4px; overflow: hidden; }
 .work .thumb img { width: 100%; height: 100%; object-fit: cover; }
 /* マウスを乗せると再生ボタンが出る */

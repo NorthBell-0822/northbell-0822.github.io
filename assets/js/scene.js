@@ -16,7 +16,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // s    : 画面の短い辺に対する大きさ
 const LAYOUTS = {
   top: {
-    wide: { cube: { x: .382, y: .618, s: .30 }, pyramid: { x: .40, y: .30, s: .30 / PHI } },
+    wide: { cube: { x: .382, y: .618, s: .30 }, pyramid: { x: .17, y: .32, s: .30 / PHI } },
     tall: { cube: { x: .50, y: .36, s: .30 }, pyramid: { x: .80, y: .17, s: .30 / PHI } },
   },
   sub: {
@@ -68,9 +68,12 @@ const SKY_FRAG = /* glsl */ `
 
   void main() {
     vec2 uv = vUv;
-    vec2 p = vec2(uv.x * uAspect, uv.y) * 1.7;
-    p.x += uTime * 0.008;                   // ゆっくり流れる
-    p += vec2(-0.35, 0.25) * uv.y;          // 写真のような斜めの流れ
+    vec2 p = vec2(uv.x * uAspect, uv.y);
+    // 少しだけ右上がりに傾けて、横長に伸ばす（雲は縦より横に広がる）
+    float a = 0.22;
+    p = mat2(cos(a), sin(a), -sin(a), cos(a)) * p;
+    p *= vec2(1.3, 2.6);
+    p.x += uTime * 0.010;                   // 右へゆっくり流れる
 
     // 太陽は画面の右下の外
     vec2 sunPos = vec2(0.80 * uAspect, -0.08);
@@ -166,21 +169,18 @@ function init() {
     envMapIntensity: 0.3,     // 写り込みを控えめにして、向こう側を見せる
   });
 
-  // 三角すい用：イメージカラー #FFCC00 がほんのり透ける黄色いガラス
-  const yellowGlass = glass.clone();
-  yellowGlass.color = new THREE.Color('#FFE047');
-  yellowGlass.attenuationColor = new THREE.Color('#FFCC00');
-  yellowGlass.attenuationDistance = 6;
-  yellowGlass.envMapIntensity = 0.4;
-  yellowGlass.roughness = 0.06;   // ほぼ透明な色ガラス。後ろがはっきり透ける
-  yellowGlass.thickness = 0.6;
-  yellowGlass.iridescence = 0.2;
+  // 三角すい用：色のない、すっきり透明なガラス
+  const clearGlass = glass.clone();
+  clearGlass.roughness = 0.04;
+  clearGlass.thickness = 0.6;
+  clearGlass.iridescence = 0.5;
+  clearGlass.envMapIntensity = 0.7;   // 透明でも輪郭が見えるよう、写り込みは少し強め
 
   const cube = new THREE.Mesh(new RoundedBoxGeometry(1, 1, 1, 6, 0.06), glass);
   cube.rotation.set(0.5, 0.6, 0.1);
 
   // 三角すい（底面が三角形の錐）。先端を右に向けて「再生ボタン ▶」に見立てる
-  const pyramidMesh = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1, 3, 1), yellowGlass);
+  const pyramidMesh = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1, 3, 1), clearGlass);
   const pyramid = new THREE.Group();
   pyramid.add(pyramidMesh);
   pyramid.rotation.z = -Math.PI / 2;
