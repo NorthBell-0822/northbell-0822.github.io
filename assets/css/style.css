@@ -372,3 +372,6 @@ html:not([data-film="off"]) body::after {
 @media (prefers-reduced-motion: reduce) {
   html body::after { animation: none; }
 }
+
+/* スタジオの背景を試している間は、キャラを出さない */
+html[data-world="studio"] .figure { visibility: hidden; }

@@ -1,116 +1,155 @@
 // =========================================================
 // 「スタジオ」の背景
 // - 床から壁へ、なめらかに曲がってつながる撮影スタジオ（ホリゾント）
-// - 誰も座っていないスツール。その上にキャラが浮かぶ
-// - 左上からのやわらかい光と、床に落ちる影
+// - 誰も座っていないスツール
+// - 画面の外にある「窓」や「柱」の影が床と壁に落ちて、
+//   見えていない部分にも空間が続いているように感じさせる
 // - 写真は使わず、すべてコードで組み立てている
 // =========================================================
 import * as THREE from 'three';
 
-const FLOOR = -2.7;   // 床を高めにして、画面の下に床と影が見えるように
 const PHI = 1.618;
+const FLOOR = -2.2;
 
 export function buildStudio(scene, renderer) {
   const group = new THREE.Group();
   scene.add(group);
 
-  const BG = new THREE.Color('#c9d5e3');
+  const BG = new THREE.Color('#b9c8db');
   scene.background = BG.clone();
-  scene.fog = new THREE.Fog(BG, 30, 75);
+  scene.fog = new THREE.Fog(BG, 26, 60);
 
+  // やわらかくぼける影
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   // ---- ホリゾント：床 → 曲面 → 壁 を一枚でつなぐ ----
-  const R = 7;                 // 床と壁をつなぐ曲面の半径
-  const backZ = -24;           // 壁の位置
-  const width = 140;
+  const R = 4.5;               // 床と壁をつなぐ曲面の半径
+  const backZ = -15;           // 壁の位置
+  const width = 120;
   const profile = [];          // (z, y) の断面
-  for (let z = 12; z > backZ + R; z -= 1) profile.push([z, FLOOR]);
+  for (let z = 12; z > backZ + R; z -= 0.5) profile.push([z, FLOOR]);
   for (let i = 0; i <= 24; i++) {
     const a = (i / 24) * (Math.PI / 2);
     profile.push([backZ + R - Math.sin(a) * R, FLOOR + R - Math.cos(a) * R]);
   }
-  for (let y = FLOOR + R + 1; y <= 40; y += 2) profile.push([backZ, y]);
-
-  const cols = 2;
-  const pos = [];
-  const idx = [];
-  for (let i = 0; i < profile.length; i++) {
-    const [z, y] = profile[i];
+  for (let y = FLOOR + R + 0.5; y <= 30; y += 0.5) profile.push([backZ, y]);
+  const cols = 60;
+  const pos = [], idx = [];
+  for (const [z, y] of profile) {
     for (let c = 0; c < cols; c++) pos.push(-width / 2 + (c * width) / (cols - 1), y, z);
   }
   for (let i = 0; i < profile.length - 1; i++) {
-    const a = i * cols, b = (i + 1) * cols;
-    idx.push(a, a + 1, b, a + 1, b + 1, b);   // 面の表を上（カメラ側）に向ける
+    for (let c = 0; c < cols - 1; c++) {
+      const a = i * cols + c, b = (i + 1) * cols + c;
+      idx.push(a, a + 1, b, a + 1, b + 1, b);   // 面の表をカメラ側へ
+    }
   }
   const cycGeo = new THREE.BufferGeometry();
   cycGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   cycGeo.setIndex(idx);
   cycGeo.computeVertexNormals();
-  const cyc = new THREE.Mesh(cycGeo, new THREE.MeshStandardMaterial({ color: '#c3d1e2', roughness: 1, envMapIntensity: 0.15 }));
+  const cyc = new THREE.Mesh(cycGeo, new THREE.MeshStandardMaterial({ color: '#b3c3d6', roughness: 1, envMapIntensity: 0.05 }));
   cyc.receiveShadow = true;
   group.add(cyc);
 
   // ---- スツール（誰も座っていない） ----
   const stool = new THREE.Group();
-  const dark = new THREE.MeshStandardMaterial({ color: '#2a2b2f', roughness: 0.55, metalness: 0.1 });
-  const seatH = 2.1;
-  const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.6, 0.12, 48), dark);
+  const dark = new THREE.MeshStandardMaterial({ color: '#26272b', roughness: 0.5, metalness: 0.1 });
+  const seatH = 2.3;
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.58, 0.12, 48), dark);
   seat.position.y = seatH;
   stool.add(seat);
   for (let k = 0; k < 4; k++) {
     const a = k * Math.PI / 2 + Math.PI / 4;
     const top = new THREE.Vector3(Math.cos(a) * 0.38, seatH - 0.05, Math.sin(a) * 0.38);
-    const bottom = new THREE.Vector3(Math.cos(a) * 0.62, 0, Math.sin(a) * 0.62);   // 脚は少し外に開く
+    const bottom = new THREE.Vector3(Math.cos(a) * 0.6, 0, Math.sin(a) * 0.6);   // 脚は少し外に開く
     const len = top.distanceTo(bottom);
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, len, 12), dark);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, len, 12), dark);
     leg.position.copy(top).add(bottom).multiplyScalar(0.5);
     leg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), top.clone().sub(bottom).normalize());
     stool.add(leg);
   }
   // 足置きの輪（高さは座面の 1/φ²）
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.022, 10, 64), dark);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.024, 10, 64), dark);
   ring.rotation.x = Math.PI / 2;
   ring.position.y = seatH / (PHI * PHI);
   stool.add(ring);
-  stool.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  stool.position.set(-2, FLOOR, -7);
+  stool.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  stool.position.set(-1.6, FLOOR, -6);
   stool.rotation.y = 0.3;
   group.add(stool);
 
-  // ---- 光：左上からのやわらかい窓明かり ----
-  const hemi = new THREE.HemisphereLight('#eef3fa', '#8e9cb0', 0.45);
-  const key = new THREE.DirectionalLight('#fff6ea', 1.25);
-  key.position.set(-9, 14, 8);
-  key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
-  key.shadow.camera.left = -14; key.shadow.camera.right = 14;
-  key.shadow.camera.top = 14; key.shadow.camera.bottom = -14;
-  key.shadow.camera.near = 1; key.shadow.camera.far = 50;
-  key.shadow.radius = 8;
-  key.shadow.bias = -0.0005;
-  key.target.position.set(0, FLOOR, -6);
-  // 壁にほんのり当たる、夕方の黄色（#FFCC00 をごく薄く）
-  const warm = new THREE.SpotLight('#ffe08a', 40, 60, 0.5, 0.9, 1.4);
-  warm.position.set(14, 8, -6);
-  warm.target.position.set(-6, 2, backZ);
-  group.add(hemi, key, key.target, warm, warm.target);
+  // ---- 画面の外にある「窓のある壁」と「柱」：見えないが影だけ落とす ----
+  const ghost = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  const occluders = new THREE.Group();
+  // 窓の格子：縦長の窓（1 : φ）が2つ並ぶ壁。光はこの窓を通って床と奥の壁に落ちる
+  const winW = 2.2, winH = winW * PHI, gap = 0.5, frame = 6;
+  const wallParts = [
+    // [幅, 高さ, x, y]  ※窓の外側を埋める板
+    [frame * 2 + winW * 2 + gap, frame, 0, winH / 2 + frame / 2],     // 上
+    [frame * 2 + winW * 2 + gap, frame, 0, -winH / 2 - frame / 2],    // 下
+    [frame, winH, -(winW + gap / 2) - frame / 2, 0],                  // 左
+    [frame, winH, (winW + gap / 2) + frame / 2, 0],                   // 右
+    [gap, winH, 0, 0],                                                // 窓と窓のあいだ
+    [winW * 2 + gap, 0.12, 0, 0.35],                                  // 横の桟
+  ];
+  for (const [w, h, x, y] of wallParts) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.2), ghost);
+    m.position.set(x, y, 0);
+    m.castShadow = true;
+    occluders.add(m);
+  }
+  // 光の向きに対して窓を立てる（左上・手前に、画面の外）
+  occluders.position.set(-6.5, 13.5, 1.1);
+  occluders.lookAt(0, FLOOR, -8);
+  group.add(occluders);
+  const OCC = occluders.position.clone();
+  // 右手前の柱：奥の壁に、縦長の影を落とす
+  const pillar = new THREE.Mesh(new THREE.BoxGeometry(1.4, 30, 1.4), ghost);
+  pillar.position.set(13, 6, 2);
+  pillar.castShadow = true;
+  group.add(pillar);
+
+  // ---- 光 ----
+  // 窓から差し込む光（強め・少し温かい白）
+  const sun = new THREE.DirectionalLight('#fff4e2', 2.4);
+  sun.position.set(-10, 22, 6);   // 高めの位置から差し込む光
+  sun.target.position.set(0, FLOOR, -8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);   // 少し粗くして、影の輪郭をやわらかく
+  Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 80 });
+  sun.shadow.radius = 14;
+  sun.shadow.blurSamples = 20;
+  sun.shadow.bias = -0.0004;
+  // 部屋全体のやわらかい青い光（影の部分の色）
+  const hemi = new THREE.HemisphereLight('#dbe6f3', '#7f8fa6', 0.26);
+  // 右の壁にごく薄く当たる夕方の黄色（#FFCC00）
+  const warm = new THREE.SpotLight('#ffd76a', 30, 50, 0.45, 1, 1.5);
+  warm.position.set(12, 6, -4);
+  warm.target.position.set(4, 1, backZ);
+  group.add(sun, sun.target, hemi, warm, warm.target);
 
   return {
     hidesSky: true,
-    wantsShadows: true,
+    hideFigure: true,
+    hideGlass: true,    // スツールと影を見せるため、ガラスも一旦しまう
+    // 床を広く見せる（地平線を少し上へ）
+    horizonShift(tall) { return tall ? -0.06 : -0.1; },
     setTall(tall) {
-      group.position.y = tall ? 1.8 : 0;   // スマホでは床を上げて、スツールをキャラのそばに（文字に重ならない）
-    },
-    // キャラの真下にスツールを置く（キャラがいないページは右寄りの黄金比の位置）
-    setAnchor(x, tall) {
-      // キャラの少し右奥。キャラがいないページは右寄りの黄金比の位置
-      stool.position.x = x != null ? x + (tall ? 1.6 : 1.8) : (tall ? 1.6 : 3.4);
-      stool.position.z = tall ? -15 : -7;   // スマホでは奥に下げて、文字に重ならないように
+      // ページと画面の向きで、文字に重ならない場所に置く
+      const page = document.body.dataset.scene || 'sub';
+      const spot = tall
+        ? (page === 'top' ? [0.6, -10, 1.5] : [1.2, -8, 0])       // [x, z, 床の持ち上げ]
+        : (page === 'top' ? [-0.2, -7, 0] : [4.4, -7, 0]);
+      const [x, z, lift] = spot;
+      group.position.y = lift;
+      stool.position.set(x, FLOOR, z);
+      // 窓の光だまりも、スツールと一緒に動かす
+      occluders.position.set(OCC.x + (x + 0.2), OCC.y, OCC.z + (z + 7));
     },
     update(t) {
-      stool.rotation.y = 0.3 + Math.sin(t * 0.15) * 0.05;
+      stool.rotation.y = 0.3 + Math.sin(t * 0.15) * 0.04;
     },
   };
 }

@@ -6,11 +6,10 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from '/assets/js/vendor/RoomEnvironment.js';
 import { RoundedBoxGeometry } from '/assets/js/vendor/RoundedBoxGeometry.js';
-import { buildArches } from '/assets/js/arches.js';
 import { buildStudio } from '/assets/js/studio.js';
 
-// 背景の世界：'sky'（雲の空）、'arch'（白いアーチの水辺）、'studio'（スツールのあるスタジオ）
-// URL の末尾に ?world=arch などを付けると切り替えて見比べられる
+// 背景の世界：'sky'（雲の空）か 'studio'（スツールのあるスタジオ）
+// URL の末尾に ?world=studio を付けると切り替えて見比べられる
 const PARAMS = new URLSearchParams(location.search);
 const WORLD = PARAMS.get('world') || 'sky';
 // インスタントカメラ風の質感（ざらつき・にじみ・色かぶり）。?film=off で外せる
@@ -223,7 +222,6 @@ function init() {
   sky.frustumCulled = false;
   sky.renderOrder = -1;
   let room = null;   // 追加の世界（アーチの水辺など）
-  if (WORLD === 'arch') room = buildArches(scene);
   if (WORLD === 'studio') room = buildStudio(scene, renderer);
   if (!room?.hidesSky) scene.add(sky);
 
@@ -299,13 +297,13 @@ function init() {
   pyramid.rotation.z = -Math.PI / 2;
   cube.position.z = 1.6;
   pyramid.position.z = 2.2;
-  scene.add(cube, pyramid);
+  if (!room?.hideGlass) scene.add(cube, pyramid);
 
   // ---- キャラ画像を板として置く ----
   const figures = [];
   const loader = new THREE.TextureLoader();
   const pending = [];
-  document.querySelectorAll('[data-gl="figure"]').forEach((img) => {
+  if (!room?.hideFigure) document.querySelectorAll('[data-gl="figure"]').forEach((img) => {
     // transparent にするとガラスの透過に写らないので、alphaToCoverage で縁をなめらかに抜く
     const mat = new THREE.MeshBasicMaterial({ alphaToCoverage: true, toneMapped: false, fog: false });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
