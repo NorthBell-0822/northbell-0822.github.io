@@ -160,10 +160,10 @@ function init() {
     iridescence: 0.5,         // パールの虹色
     iridescenceIOR: 1.35,
     iridescenceThicknessRange: [120, 420],
-    clearcoat: 1,
+    clearcoat: 0.5,
     clearcoatRoughness: 0.15,
     specularIntensity: 1,
-    envMapIntensity: 0.55,
+    envMapIntensity: 0.3,     // 写り込みを控えめにして、向こう側を見せる
   });
 
   // 三角すい用：イメージカラー #FFCC00 がほんのり透ける黄色いガラス
