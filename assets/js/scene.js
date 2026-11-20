@@ -16,16 +16,16 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // s    : 画面の短い辺に対する大きさ
 const LAYOUTS = {
   top: {
-    wide: { cube: { x: .382, y: .618, s: .30 }, pyramid: { x: .17, y: .32, s: .30 / PHI } },
-    tall: { cube: { x: .74, y: .50, s: .34 }, pyramid: { x: .24, y: .22, s: .34 / PHI } },
+    wide: { cube: { x: .382, y: .618, s: .30 }, pyramid: { x: .40, y: .30, s: .30 / PHI } },
+    tall: { cube: { x: .50, y: .36, s: .30 }, pyramid: { x: .80, y: .17, s: .30 / PHI } },
   },
   sub: {
     wide: { cube: { x: .809, y: .618, s: .30 }, pyramid: { x: .70, y: .30, s: .30 / PHI } },
-    tall: { cube: { x: .80, y: .86, s: .34 }, pyramid: { x: .12, y: .90, s: .34 / PHI } },
+    tall: { cube: { x: .76, y: .70, s: .30 }, pyramid: { x: .26, y: .80, s: .30 / PHI } },
   },
   profile: {
     wide: { cube: { x: .72, y: .80, s: .22 }, pyramid: { x: .86, y: .22, s: .26 / PHI } },
-    tall: { cube: { x: .82, y: .40, s: .34 }, pyramid: { x: .86, y: .15, s: .30 / PHI } },
+    tall: { cube: { x: .66, y: .74, s: .30 }, pyramid: { x: .86, y: .14, s: .28 / PHI } },
   },
 };
 const layoutKey = document.body.dataset.scene || 'sub';
@@ -118,8 +118,8 @@ function init() {
     return; // WebGL なし
   }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.95;
+  renderer.toneMapping = THREE.NeutralToneMapping;   // 色がくすまないトーンマップ
+  renderer.toneMappingExposure = 1.0;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e7e7e7');
@@ -154,8 +154,8 @@ function init() {
   const glass = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     transmission: 1,          // 透過
-    roughness: 0.28,          // すりガラスのぼけ具合（0 で透明ガラス）
-    thickness: 1.2,
+    roughness: 0.17,          // すりガラスのぼけ具合（0 で透明ガラス）
+    thickness: 0.8,
     ior: 1.45,
     iridescence: 0.5,         // パールの虹色
     iridescenceIOR: 1.35,
@@ -168,12 +168,13 @@ function init() {
 
   // 三角すい用：イメージカラー #FFCC00 がほんのり透ける黄色いガラス
   const yellowGlass = glass.clone();
-  yellowGlass.color = new THREE.Color('#ffdf6b');
+  yellowGlass.color = new THREE.Color('#FFE047');
   yellowGlass.attenuationColor = new THREE.Color('#FFCC00');
-  yellowGlass.attenuationDistance = 3;
-  yellowGlass.emissive = new THREE.Color('#FFCC00');
-  yellowGlass.emissiveIntensity = 0.18;   // くすまないように少しだけ自ら光らせる
-  yellowGlass.iridescence = 0.25;
+  yellowGlass.attenuationDistance = 6;
+  yellowGlass.envMapIntensity = 0.4;
+  yellowGlass.roughness = 0.06;   // ほぼ透明な色ガラス。後ろがはっきり透ける
+  yellowGlass.thickness = 0.6;
+  yellowGlass.iridescence = 0.2;
 
   const cube = new THREE.Mesh(new RoundedBoxGeometry(1, 1, 1, 6, 0.06), glass);
   cube.rotation.set(0.5, 0.6, 0.1);
@@ -244,7 +245,7 @@ function init() {
     for (const f of figures) {
       const r = f.img.getBoundingClientRect();
       // object-fit: contain の実際の描画サイズを求める
-      const ar = (f.img.naturalWidth || 1800) / (f.img.naturalHeight || 1209);
+      const ar = (f.img.naturalWidth || 2566) / (f.img.naturalHeight || 1724);
       let w = r.width, h = r.width / ar;
       if (h > r.height) { h = r.height; w = h * ar; }
       const [x, y] = pxToWorld(r.left + r.width / 2, r.top + r.height / 2);
