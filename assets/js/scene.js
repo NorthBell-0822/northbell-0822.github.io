@@ -151,9 +151,11 @@ const FILM_FRAG = /* glsl */ `
       float a = float(i) * 0.3927;
       float r = (i < 8) ? 0.006 : 0.016;
       vec2 d = vec2(cos(a), sin(a) * uRes.x / uRes.y) * r;
-      bloom += max(texture2D(tScene, uv + d).rgb - 0.9, 0.0);
+      vec3 sm = texture2D(tScene, uv + d).rgb;
+      sm = sm / (1.0 + sm);                       // 明るさを 0〜1 に収めてから判定（白い物が光って見えないように）
+      bloom += max(sm - 0.62, 0.0);
     }
-    col += bloom / 16.0 * vec3(1.0, 0.96, 0.93) * 0.9;
+    col += bloom / 16.0 * vec3(1.0, 0.96, 0.93) * 1.6;
 
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
@@ -324,10 +326,12 @@ function init() {
 
   // ---- 画面サイズに合わせて配置し直す ----
   let W = 0, H = 0, unit = 1, base = {};
+  // 地平線を下げるためのレンズシフト量（px）。建築写真のように縦の線は傾かない
+  let shiftY = 0;
   // 画面上の px 位置 → 奥行き z の面での座標（遠近で位置がずれないように補正）
   function pxToWorld(px, py, z = 0) {
     const u = unitAt(z);
-    return [(px - W / 2) * u, -(py - H / 2) * u];
+    return [(px - W / 2) * u, -(py - shiftY - H / 2) * u];
   }
   function unitAt(z) {
     return unit * (camera.position.z - z) / camera.position.z;
@@ -339,13 +343,16 @@ function init() {
     rt.setSize(Math.round(W * dpr), Math.round(H * dpr));
     postMat.uniforms.uRes.value.set(W * dpr, H * dpr);
     sky.material.uniforms.uAspect.value = W / H;
+    const tall = W < 760 || W / H < 0.8;
+    room?.setTall(tall);
+    shiftY = (room?.horizonShift?.(tall) ?? 0) * H;
     camera.aspect = W / H;
+    if (shiftY) camera.setViewOffset(W, H, 0, -shiftY, W, H);
+    else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     // z=0 の面で 1px が何ユニットか
     unit = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z) / H;
 
-    const tall = W < 760 || W / H < 0.8;
-    room?.setTall(tall);
     const L = LAYOUTS[layoutKey][tall ? 'tall' : 'wide'];
     const short = Math.min(W, H);
     for (const [name, mesh] of [['cube', cube], ['pyramid', pyramid]]) {
