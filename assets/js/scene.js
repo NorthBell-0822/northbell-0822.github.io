@@ -6,10 +6,10 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from '/assets/js/vendor/RoomEnvironment.js';
 import { RoundedBoxGeometry } from '/assets/js/vendor/RoundedBoxGeometry.js';
-import { buildGate } from '/assets/js/gate.js';
+import { buildArches } from '/assets/js/arches.js';
 
-// 背景の世界：'sky'（雲の空）か 'gate'（雲の海に扉が並ぶ、境界の風景）
-// URL の末尾に ?world=gate を付けると切り替えて見比べられる
+// 背景の世界：'sky'（雲の空）か 'arch'（白いアーチが水辺に並ぶ風景）
+// URL の末尾に ?world=arch を付けると切り替えて見比べられる
 const PARAMS = new URLSearchParams(location.search);
 const WORLD = PARAMS.get('world') || 'sky';
 // インスタントカメラ風の質感（ざらつき・にじみ・色かぶり）。?film=off で外せる
@@ -151,7 +151,7 @@ const FILM_FRAG = /* glsl */ `
       float a = float(i) * 0.3927;
       float r = (i < 8) ? 0.006 : 0.016;
       vec2 d = vec2(cos(a), sin(a) * uRes.x / uRes.y) * r;
-      bloom += max(texture2D(tScene, uv + d).rgb - 0.7, 0.0);
+      bloom += max(texture2D(tScene, uv + d).rgb - 0.9, 0.0);
     }
     col += bloom / 16.0 * vec3(1.0, 0.96, 0.93) * 0.9;
 
@@ -219,9 +219,9 @@ function init() {
   );
   sky.frustumCulled = false;
   sky.renderOrder = -1;
-  scene.add(sky);
-  let room = null;   // 追加の世界（扉の風景など）
-  if (WORLD === 'gate') room = buildGate(scene);
+  let room = null;   // 追加の世界（アーチの水辺など）
+  if (WORLD === 'arch') room = buildArches(scene);
+  if (!room?.hidesSky) scene.add(sky);
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 300);
   camera.position.set(0, 0, 10);

@@ -15,7 +15,7 @@ news/index.html        /news/      News
 contact/index.html     /contact/   Contact
 assets/css/style.css   見た目（色・文字サイズ・余白は先頭の :root）
 assets/js/scene.js     背景の3D（すりガラスの立方体・三角すい）
-assets/js/vendor/      three.js（r170）
+assets/js/vendor/      three.js（r170）と追加部品（環境光・角丸の箱・水面の反射）
 assets/img/            キャラ画像・サムネ・OGP画像（ogp.jpg 1200x630）
 assets/3d/             Blender 素材の置き場（将来 .glb を読み込む用）
 ```
@@ -31,8 +31,8 @@ assets/3d/             Blender 素材の置き場（将来 .glb を読み込む�
 ## 背景の世界（2種類）
 
 - 雲の空（標準）：`/`
-- 境界の風景（雲の海に、どこにも繋がっていない扉が並ぶ）：URL の末尾に `?world=gate`
-  - 中身は `assets/js/gate.js`。標準にしたい時は `scene.js` の `WORLD` の初期値を `'gate'` に
+- アーチの水辺（白いアーチが鏡のような水面に並ぶ）：URL の末尾に `?world=arch`
+  - 中身は `assets/js/arches.js`。標準にしたい時は `scene.js` の `WORLD` の初期値を `'arch'` に
 
 ## チェキ風の仕上げ
 
