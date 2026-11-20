@@ -57,7 +57,7 @@ body {
   font-weight: 400;
   font-size: var(--fs-1);
   line-height: 1.8;
-  letter-spacing: .04em;
+  letter-spacing: .02em;
   overflow: hidden;              /* スクロールしない */
   -webkit-font-smoothing: antialiased;
 }
@@ -113,10 +113,10 @@ body::after {
   align-items: baseline;
   font-family: var(--sans);
   font-size: var(--fs-1);
-  letter-spacing: .08em;
+  letter-spacing: .04em;
 }
-.logo { font-family: var(--display); font-size: var(--fs-2); font-weight: 400; letter-spacing: .08em; }
-.logo small { font-family: var(--ja); font-size: var(--fs-0); color: var(--sub); margin-left: var(--sp-2); letter-spacing: .3em; }
+.logo { font-family: var(--display); font-size: var(--fs-2); font-weight: 400; letter-spacing: -.02em; }
+.logo small { font-family: var(--ja); font-size: var(--fs-0); color: var(--sub); margin-left: var(--sp-2); letter-spacing: .06em; }
 
 .tabs { display: flex; gap: var(--sp-4); text-transform: uppercase; }
 .tabs a { transition: color .2s; }
@@ -140,11 +140,14 @@ body::after {
   align-items: end;
   font-family: var(--sans);
   font-size: var(--fs-0);
-  letter-spacing: .1em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   line-height: 1.5;
 }
 .foot .note { text-align: center; color: var(--sub); }
+/* 左下の現在地：ページ名を大きく */
+.foot .cur { font-family: var(--caps); font-size: var(--fs-3); line-height: .9; letter-spacing: -.02em; text-transform: none; }
+.foot .cur small { display: block; font-size: var(--fs-0); letter-spacing: .06em; color: var(--sub); text-transform: uppercase; margin-bottom: 4px; }
 .foot .copy { justify-self: end; color: var(--sub); }
 
 /* ---------- 中身 ---------- */
@@ -167,28 +170,33 @@ body::after {
 }
 
 /* ---------- Top ---------- */
+/* 文字は大小の差を大きく、字間は詰めて、行頭を少しずつずらす（黄金比の段差） */
 .hero-name {
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(var(--fs-4), 6.2vw, var(--fs-5));
-  line-height: 1.05;
-  letter-spacing: .04em;
+  font-size: clamp(var(--fs-4), 8.4vw, 144px);    /* 89 × φ = 144 */
+  line-height: .9;
+  letter-spacing: -.035em;
+  white-space: nowrap;                            /* NorthBell は改行しない */
+  margin-left: -.06em;
 }
 .hero-ja {
   margin-top: var(--sp-3);
-  font-size: var(--fs-1);
-  letter-spacing: .5em;
+  padding-left: var(--sp-5);                      /* 一段下げる */
+  font-size: var(--fs-2);
+  letter-spacing: .08em;
 }
-.hero-ja small { color: var(--sub); letter-spacing: .2em; margin-left: var(--sp-1); }
+.hero-ja small { font-size: var(--fs-0); color: var(--sub); letter-spacing: .06em; margin-left: var(--sp-2); }
 .hero-lead {
   margin-top: var(--sp-5);
-  padding-top: var(--sp-3);
+  margin-left: 89px;                              /* さらに一段下げる */
+  padding-top: var(--sp-2);
   border-top: 1px solid var(--line);
   padding-left: var(--sp-3);
-  background: var(--play) no-repeat 0 calc(var(--sp-3) + 4px) / 8px 8px;
+  background: var(--play) no-repeat 0 calc(var(--sp-2) + 4px) / 8px 8px;
   font-family: var(--sans);
   font-size: var(--fs-0);
-  letter-spacing: .14em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--sub);
 }
@@ -197,16 +205,18 @@ body::after {
 .page-title {
   font-family: var(--caps);
   font-weight: 400;
-  font-size: clamp(var(--fs-4), 6.2vw, var(--fs-5));
-  line-height: 1.05;
-  letter-spacing: .03em;
+  font-size: clamp(var(--fs-4), 8.4vw, 144px);
+  line-height: .9;
+  letter-spacing: -.03em;
+  margin-left: -.05em;
 }
 .page-title small {
   display: block;
   margin-top: var(--sp-2);
+  padding-left: var(--sp-5);                      /* 見出しから一段下げる */
   font-family: var(--ja);
-  font-size: var(--fs-0);
-  letter-spacing: .4em;
+  font-size: var(--fs-1);
+  letter-spacing: .08em;
   color: var(--sub);
 }
 
@@ -219,6 +229,7 @@ body::after {
 
 .panel {
   margin-top: var(--sp-4);
+  margin-left: var(--sp-5);                       /* 見出しから一段下げる */
   padding: var(--sp-4);
   max-height: 61.8%;
   overflow: auto;            /* 中身が多い時はパネルの中だけ動く */
@@ -234,11 +245,11 @@ body::after {
   border-bottom: 1px solid var(--line);
 }
 .rows li:last-child { border-bottom: 0; }
-.rows .k { font-family: var(--sans); color: var(--sub); font-variant-numeric: tabular-nums; letter-spacing: .08em; }
+.rows .k { font-family: var(--sans); color: var(--sub); font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 
 /* Profile */
-.profile-name { font-size: var(--fs-2); font-weight: 400; letter-spacing: .12em; }
-.profile-name small { font-size: var(--fs-0); color: var(--sub); margin-left: var(--sp-2); letter-spacing: .2em; font-weight: 400; }
+.profile-name { font-size: var(--fs-3); font-weight: 400; letter-spacing: .02em; line-height: 1.2; }
+.profile-name small { font-size: var(--fs-0); color: var(--sub); margin-left: var(--sp-2); letter-spacing: .04em; font-weight: 400; }
 .profile-text { margin-top: var(--sp-3); }
 .profile .rows { margin-top: var(--sp-3); }
 
@@ -249,6 +260,7 @@ body::after {
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
   margin-top: var(--sp-4);
+  margin-left: var(--sp-5);
   overflow: auto;
 }
 .work {
@@ -258,7 +270,7 @@ body::after {
   transition: background .3s;
 }
 .work:hover { background: rgba(255, 255, 255, .5); }
-.work .no { font-family: var(--display); font-style: italic; font-weight: 400; font-size: var(--fs-2); line-height: 1; }
+.work .no { font-family: var(--display); font-weight: 400; font-size: var(--fs-3); line-height: .9; letter-spacing: -.03em; }
 .work .thumb { position: relative; aspect-ratio: 1.618 / 1; margin: var(--sp-2) 0; background: var(--pearl); border-radius: 4px; overflow: hidden; }
 .work .thumb img { width: 100%; height: 100%; object-fit: cover; }
 /* マウスを乗せると再生ボタンが出る */
@@ -271,7 +283,7 @@ body::after {
 }
 .work:hover .thumb::after { opacity: 1; }
 .work p { font-size: var(--fs-1); line-height: 1.5; }
-.work small { display: block; font-family: var(--sans); font-size: var(--fs-0); color: var(--sub); letter-spacing: .08em; }
+.work small { display: block; font-family: var(--sans); font-size: var(--fs-0); color: var(--sub); letter-spacing: .04em; }
 
 /* 縦書きの小さな注意書き（左端） */
 .side-note {
@@ -311,7 +323,13 @@ body::after {
   .foot .note { display: none; }
 
   .content { justify-content: flex-start; }
-  .hero-lead { margin-top: var(--sp-3); }
+  .hero-name { font-size: 19vw; }
+  .page-title { font-size: 17vw; }
+  .hero-ja { padding-left: var(--sp-4); font-size: var(--fs-1); }
+  .hero-lead { margin-top: var(--sp-3); margin-left: var(--sp-5); }
+  .page-title small { padding-left: var(--sp-4); }
+  .panel, .works { margin-left: var(--sp-3); }
+  .foot .cur { font-size: var(--fs-2); }
   .panel { max-height: 100%; padding: var(--sp-3); min-height: 0; }
   .works { grid-template-columns: repeat(2, 1fr); }
   .rows li { grid-template-columns: 6em 1fr; }
