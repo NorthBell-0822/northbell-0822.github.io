@@ -342,3 +342,18 @@ body::after {
     aspect-ratio: 2566 / 1724;
   }
 }
+
+/* ---------- 静かな部屋（?world=room） ---------- */
+/* フィルムのような粒子と、四隅をほんのり落とす */
+html[data-world="room"] body::after { opacity: .1; }
+html[data-world="room"] body::before {
+  content: "";
+  position: fixed; inset: 0;
+  z-index: 49;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(20, 40, 36, .22) 100%);
+}
+/* 足元は水面なので、フッターの文字を白に */
+html[data-world="room"] .foot,
+html[data-world="room"] .foot .note,
+html[data-world="room"] .foot .copy { color: rgba(255, 255, 255, .92); }

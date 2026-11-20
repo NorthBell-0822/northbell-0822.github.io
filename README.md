@@ -28,6 +28,12 @@ assets/3d/             Blender 素材の置き場（将来 .glb を読み込む�
 - 3D の配置：`scene.js` の `LAYOUTS`（画面に対する割合で指定）
 - 背景の雲：`scene.js` の `SKY_FRAG`（写真は使わずノイズで描画）。ページごとの淡さは `<body data-sky-fade="0.25">`（0〜1、大きいほど白っぽい）
 
+## 背景の世界（2種類）
+
+- 雲の空（標準）：`/`
+- 静かな部屋（白い部屋・窓・水面）：URL の末尾に `?world=room`（例：`/?world=room`）
+  - 中身は `assets/js/room.js`。標準を部屋にしたい時は `scene.js` の `WORLD` の初期値を `'room'` に
+
 ## 3D の調整
 
 `assets/js/scene.js` の `glass` の値で質感が変わる。

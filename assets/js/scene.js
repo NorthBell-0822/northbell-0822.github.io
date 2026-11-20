@@ -6,6 +6,18 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from '/assets/js/vendor/RoomEnvironment.js';
 import { RoundedBoxGeometry } from '/assets/js/vendor/RoundedBoxGeometry.js';
+import { buildRoom } from '/assets/js/room.js';
+
+// 背景の世界：'sky'（雲の空）か 'room'（静かな部屋）
+// URL の末尾に ?world=room を付けると切り替えて見比べられる
+const WORLD = new URLSearchParams(location.search).get('world') || 'sky';
+if (WORLD !== 'sky') {
+  // タブを移動しても同じ世界のままにする
+  document.querySelectorAll('a[href^="/"]').forEach((a) => {
+    a.href = a.getAttribute('href') + '?world=' + encodeURIComponent(WORLD);
+  });
+  document.documentElement.dataset.world = WORLD;
+}
 
 const PHI = 1.618;
 const canvas = document.getElementById('gl');
@@ -127,6 +139,10 @@ function init() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e7e7e7');
 
+  // 写り込み用のスタジオ照明
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
   // ---- 背景の空と雲（写真は使わず、ノイズで描いている） ----
   const sky = new THREE.Mesh(
     new THREE.PlaneGeometry(2, 2),
@@ -144,11 +160,9 @@ function init() {
   );
   sky.frustumCulled = false;
   sky.renderOrder = -1;
-  scene.add(sky);
-
-  // 写り込み用のスタジオ照明
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  let room = null;
+  if (WORLD === 'room') room = buildRoom(scene, renderer);
+  else scene.add(sky);
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
   camera.position.set(0, 0, 10);
@@ -194,7 +208,7 @@ function init() {
   const pending = [];
   document.querySelectorAll('[data-gl="figure"]').forEach((img) => {
     // transparent にするとガラスの透過に写らないので alphaTest で抜く
-    const mat = new THREE.MeshBasicMaterial({ alphaTest: 0.5, toneMapped: false });
+    const mat = new THREE.MeshBasicMaterial({ alphaTest: 0.5, toneMapped: false, fog: false });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
     mesh.visible = false;
     scene.add(mesh);
@@ -231,6 +245,7 @@ function init() {
     unit = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z) / H;
 
     const tall = W < 760 || W / H < 0.8;
+    room?.setTall(tall);
     const L = LAYOUTS[layoutKey][tall ? 'tall' : 'wide'];
     const short = Math.min(W, H);
     for (const [name, mesh] of [['cube', cube], ['pyramid', pyramid]]) {
@@ -270,6 +285,7 @@ function init() {
 
     const m = reduceMotion ? 0 : 1;
     sky.material.uniforms.uTime.value = 20 + t * m;
+    room?.update(t * m);
     cube.rotation.x = 0.5 + t * 0.09 * m + pointer.y * 0.3;
     cube.rotation.y = 0.6 + t * 0.12 * m + pointer.x * 0.3;
     pyramidMesh.rotation.y = 0.5 + t * 0.35 * m;              // 先端の軸まわりにくるくる
