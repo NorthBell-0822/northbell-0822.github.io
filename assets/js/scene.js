@@ -355,6 +355,8 @@ function init() {
     if (shiftY) camera.setViewOffset(W, H, 0, -shiftY, W, H);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
+    // 世界によっては、カメラの位置と向きを変える（スタジオは少し上から見下ろす）
+    if (room?.pose) room.pose(camera, tall);
     // z=0 の面で 1px が何ユニットか
     unit = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z) / H;
 

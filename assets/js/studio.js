@@ -117,11 +117,10 @@ export function buildStudio(scene, renderer) {
   sun.position.set(-10, 22, 6);   // 高めの位置から差し込む光
   sun.target.position.set(0, FLOOR, -8);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);   // 少し粗くして、影の輪郭をやわらかく
-  Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 80 });
-  sun.shadow.radius = 14;
-  sun.shadow.blurSamples = 20;
-  sun.shadow.bias = -0.0004;
+  sun.shadow.mapSize.set(4096, 4096);   // 影を高精細に
+  Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, near: 1, far: 70 });
+  sun.shadow.bias = -0.0003;
+  sun.shadow.normalBias = 0.02;
   // 部屋全体のやわらかい青い光（影の部分の色）
   const hemi = new THREE.HemisphereLight('#dbe6f3', '#7f8fa6', 0.26);
   // 右の壁にごく薄く当たる夕方の黄色（#FFCC00）
@@ -134,14 +133,17 @@ export function buildStudio(scene, renderer) {
     hidesSky: true,
     hideFigure: true,
     hideGlass: true,    // スツールと影を見せるため、ガラスも一旦しまう
-    // 床を広く見せる（地平線を少し上へ）
-    horizonShift(tall) { return tall ? -0.06 : -0.1; },
+    // カメラ：少し上から、スツールを見下ろす
+    pose(camera, tall) {
+      camera.position.set(0, tall ? 6.5 : 6, tall ? 13 : 12);
+      camera.lookAt(stool.position.x * 0.4, FLOOR + 1.2, stool.position.z + (tall ? -1 : 0));
+    },
     setTall(tall) {
       // ページと画面の向きで、文字に重ならない場所に置く
       const page = document.body.dataset.scene || 'sub';
       const spot = tall
-        ? (page === 'top' ? [0.6, -10, 1.5] : [1.2, -8, 0])       // [x, z, 床の持ち上げ]
-        : (page === 'top' ? [-0.2, -7, 0] : [4.4, -7, 0]);
+        ? (page === 'top' ? [0.4, -13, 0] : [1.2, -6, 0])         // [x, z, 床の持ち上げ]
+        : (page === 'top' ? [-3.2, -7, 0] : [4.4, -7, 0]);
       const [x, z, lift] = spot;
       group.position.y = lift;
       stool.position.set(x, FLOOR, z);
