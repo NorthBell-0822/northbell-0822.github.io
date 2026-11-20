@@ -34,6 +34,15 @@ assets/3d/             Blender 素材の置き場（将来 .glb を読み込む�
 - 静かな部屋（白い部屋・窓・水面）：URL の末尾に `?world=room`（例：`/?world=room`）
   - 中身は `assets/js/room.js`。標準を部屋にしたい時は `scene.js` の `WORLD` の初期値を `'room'` に
 
+## インスタントカメラ風の質感
+
+画面全体に、ざらつき・にじみ・色かぶり・光漏れ・周辺減光をかけている（`scene.js` の `FILM_FRAG`）。
+URL の末尾に `?film=off` を付けると外した状態を見られる。
+
+## 保存してある状態
+
+- コミット `562e298`：フィルム質感を入れる前（雲の空が標準、`?world=room` で部屋）
+
 ## 3D の調整
 
 `assets/js/scene.js` の `glass` の値で質感が変わる。

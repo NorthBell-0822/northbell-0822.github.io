@@ -10,13 +10,17 @@ import { buildRoom } from '/assets/js/room.js';
 
 // 背景の世界：'sky'（雲の空）か 'room'（静かな部屋）
 // URL の末尾に ?world=room を付けると切り替えて見比べられる
-const WORLD = new URLSearchParams(location.search).get('world') || 'sky';
-if (WORLD !== 'sky') {
-  // タブを移動しても同じ世界のままにする
+const PARAMS = new URLSearchParams(location.search);
+const WORLD = PARAMS.get('world') || 'sky';
+// インスタントカメラ風の質感（ざらつき・にじみ・色かぶり）。?film=off で外せる
+const FILM = PARAMS.get('film') !== 'off';
+if (!FILM) document.documentElement.dataset.film = 'off';
+if (WORLD !== 'sky') document.documentElement.dataset.world = WORLD;
+// タブを移動しても、同じ見た目の設定のままにする
+if (location.search) {
   document.querySelectorAll('a[href^="/"]').forEach((a) => {
-    a.href = a.getAttribute('href') + '?world=' + encodeURIComponent(WORLD);
+    a.href = a.getAttribute('href') + location.search;
   });
-  document.documentElement.dataset.world = WORLD;
 }
 
 const PHI = 1.618;
@@ -125,6 +129,72 @@ const SKY_FRAG = /* glsl */ `
   }
 `;
 
+// ---- フィルムの仕上げ（画面全体にかける最後の一手） ----
+const FILM_FRAG = /* glsl */ `
+  precision highp float;
+  varying vec2 vUv;
+  uniform sampler2D tScene;
+  uniform vec2 uRes;
+  uniform float uTime;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+
+  void main() {
+    vec2 uv = vUv;
+    vec2 c = uv - 0.5;
+    float r2 = dot(c, c);
+
+    // 1. 端ほど色がずれる（安いレンズっぽさ）
+    vec2 off = c * r2 * 0.018;
+    vec3 col;
+    col.r = texture2D(tScene, uv + off).r;
+    col.g = texture2D(tScene, uv).g;
+    col.b = texture2D(tScene, uv - off).b;
+
+    // 2. にじみ：明るいところの周りが赤橙ににじむ（ハレーション）＋全体を少しだけ甘く
+    vec3 glow = vec3(0.0), soft = vec3(0.0);
+    for (int i = 0; i < 12; i++) {
+      float a = float(i) * 0.5236;
+      vec2 d = vec2(cos(a), sin(a) * uRes.x / uRes.y);
+      vec3 s1 = texture2D(tScene, uv + d * 0.004).rgb;
+      vec3 s2 = texture2D(tScene, uv + d * 0.011).rgb;
+      soft += s1;
+      glow += max(s1 - 1.0, 0.0) + max(s2 - 1.0, 0.0) * 0.7;
+    }
+    soft /= 12.0;
+    col = mix(col, soft, 0.22);
+    col += glow / 12.0 * vec3(1.0, 0.62, 0.42) * 0.55;
+
+    // ここで普段どおりのトーンマップをかけてから、見た目の色（sRGB）で仕上げる
+    gl_FragColor = vec4(col, 1.0);
+    #include <tonemapping_fragment>
+    col = pow(clamp(gl_FragColor.rgb, 0.0, 1.0), vec3(1.0 / 2.2));
+
+    // 3. 色：黒を浮かせて白を少し抑える（フィルムの淡さ）
+    col = mix(vec3(0.07, 0.075, 0.085), vec3(0.975, 0.965, 0.93), col);
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+    col += (1.0 - lum) * vec3(-0.012, 0.012, 0.022);   // 影は青緑寄り
+    col += lum * vec3(0.018, 0.008, -0.022);            // 明るいところは温かく
+
+    // 4. 光漏れ：左上からうっすら（ゆっくり呼吸する）
+    float leak = smoothstep(0.85, 0.0, length((uv - vec2(-0.05, 1.05)) * vec2(1.0, 1.3)));
+    col += vec3(1.0, 0.62, 0.25) * leak * (0.07 + 0.03 * sin(uTime * 0.35));
+
+    // 5. 周辺減光
+    col *= 1.0 - smoothstep(0.3, 0.85, length(c * vec2(1.1, 1.0))) * 0.3;
+
+    // 6. 粒子：毎フレーム変わる、中間調に強めのざらつき
+    vec2 px = floor(uv * uRes / 1.5);
+    float t = floor(uTime * 24.0);
+    float g = hash(px + t * 17.13) - 0.5;
+    vec3 gc = vec3(hash(px + t * 3.1 + 1.7), hash(px + t * 5.3 + 4.2), hash(px + t * 7.7 + 9.1)) - 0.5;
+    float amt = 0.11 * (1.0 - abs(lum - 0.5) * 0.9);
+    col += g * amt + gc * amt * 0.35;
+
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
 function init() {
   let renderer;
   try {
@@ -166,6 +236,21 @@ function init() {
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
   camera.position.set(0, 0, 10);
+
+  // フィルム仕上げ用：一度テクスチャに描いてから、全画面の板で仕上げる
+  const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+  const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const postMat = new THREE.ShaderMaterial({
+    uniforms: { tScene: { value: rt.texture }, uRes: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: FILM_FRAG,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const postScene = new THREE.Scene();
+  const postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat);
+  postQuad.frustumCulled = false;
+  postScene.add(postQuad);
 
   // ---- すりガラス＋パールの質感 ----
   const glass = new THREE.MeshPhysicalMaterial({
@@ -238,6 +323,9 @@ function init() {
   function layout() {
     W = innerWidth; H = innerHeight;
     renderer.setSize(W, H, false);
+    const dpr = renderer.getPixelRatio();
+    rt.setSize(Math.round(W * dpr), Math.round(H * dpr));
+    postMat.uniforms.uRes.value.set(W * dpr, H * dpr);
     sky.material.uniforms.uAspect.value = W / H;
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
@@ -298,7 +386,15 @@ function init() {
     pyramid.position.x = base.pyramid.x - pointer.x * 0.4;
     pyramid.position.y = base.pyramid.y + Math.sin(t * 0.5 + 1.6) * 0.08 * m + pointer.y * 0.3;
 
-    renderer.render(scene, camera);
+    if (FILM) {
+      postMat.uniforms.uTime.value = t;
+      renderer.setRenderTarget(rt);
+      renderer.render(scene, camera);
+      renderer.setRenderTarget(null);
+      renderer.render(postScene, postCam);
+    } else {
+      renderer.render(scene, camera);
+    }
     requestAnimationFrame(frame);
   }
 

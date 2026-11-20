@@ -357,3 +357,21 @@ html[data-world="room"] body::before {
 html[data-world="room"] .foot,
 html[data-world="room"] .foot .note,
 html[data-world="room"] .foot .copy { color: rgba(255, 255, 255, .92); }
+
+/* ---------- インスタントカメラ風の粒子（文字やパネルの上にも） ---------- */
+/* 3D 側でも粒子をかけているので、ここは控えめに全体をなじませる役 */
+html:not([data-film="off"]) body::after {
+  inset: -50%;
+  opacity: .09;
+  animation: grain .5s steps(4) infinite;
+}
+@keyframes grain {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-3%, 2%); }
+  50%  { transform: translate(2%, -3%); }
+  75%  { transform: translate(-1%, -2%); }
+  100% { transform: translate(3%, 1%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html body::after { animation: none; }
+}
